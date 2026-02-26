@@ -1,0 +1,30 @@
+/* Phase 3 — Wallet Authentication */
+
+/* Inter from Google Fonts — clean, modern, highly legible */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  /* Prevent layout shifts while font loads */
+  font-display: swap;
+}
+
+/* Smooth scroll for any anchor navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure modal backdrop covers scrollbars */
+body:has([role="dialog"]) {
+  overflow: hidden;
+}
+

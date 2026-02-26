@@ -1,0 +1,34 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend API for the blockchain-based secure document management system (Express + MongoDB).",
+  "type": "commonjs",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "build": "echo \"Server build pipeline will be implemented in a later phase.\"",
+    "test": "echo \"No server tests defined yet.\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.16.0",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "kubo-rpc-client": "^6.1.0",
+    "mongoose": "^8.13.2",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "keywords": [
+    "backend",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Smart contracts and blockchain tooling for the secure document management system (Hardhat to be added in Phase 5).",
+  "main": "src/index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "node": "hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "solidity",
+    "hardhat"
+  ],
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.2.0",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.19"
+  }
+}

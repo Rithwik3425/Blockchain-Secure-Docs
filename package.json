@@ -1,0 +1,34 @@
+{
+  "name": "blockchain-secure-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for a blockchain-based secure document management system (client, server, blockchain, shared).",
+  "workspaces": [
+    "client",
+    "server",
+    "blockchain",
+    "shared"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "dev:blockchain": "npm run dev --workspace blockchain",
+    "build": "npm run build --workspace client && npm run build --workspace server",
+    "lint": "npm run lint --workspace client || true",
+    "prepare": "npm run prepare --workspace blockchain || true"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "blockchain",
+    "ipfs",
+    "documents",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.2.1"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "client",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend client for the blockchain-based secure document management system (React + Vite + Tailwind).",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "echo \"Client linting will be configured in a later phase.\"",
+    "test": "echo \"No client tests defined yet.\""
+  },
+  "dependencies": {
+    "ethers": "^6.16.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react-swc": "^4.2.3",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.1",
+    "vite": "^7.3.1"
+  },
+  "keywords": [
+    "frontend",
+    "client"
+  ],
+  "author": "",
+  "license": "MIT"
+}
