@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/rubix/dev/MAJOR_PROJECT/mp_v_2/blockchain/contracts/DocumentRegistry.sol": {
-      "lastModificationDate": 1772129660303,
-      "contentHash": "281b4a73287dc287fbc7bb75c62d5a40",
+      "lastModificationDate": 1772133745803,
+      "contentHash": "a995487d702151ae3b503512d8a288aa",
       "sourceName": "contracts/DocumentRegistry.sol",
       "solcConfig": {
         "version": "0.8.28",
@@ -29,9 +29,7 @@
           }
         }
       },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol"
-      ],
+      "imports": [],
       "versionPragmas": [
         "^0.8.28"
       ],

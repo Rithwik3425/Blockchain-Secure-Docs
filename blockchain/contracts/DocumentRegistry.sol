@@ -1,143 +1,209 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 /**
- * @title DocumentRegistry
- * @dev Phase 10: Versioned document registry.
- * Each document has a stable ID (its first IPFS hash). New versions push
- * new CIDs into a history array while preserving access control.
+ * @title  DocumentRegistry
+ * @notice Canonical lifecycle — Phase 13 refactor.
+ *
+ * Key design rules (immutable):
+ *   - Files are NEVER stored on-chain.
+ *   - The primary key is a bytes32 documentHash = keccak256(metadata).
+ *   - The CID is stored as a reference to IPFS content only.
+ *   - Every write must be signed by the document owner's wallet.
+ *   - Access control lives entirely on-chain.
  */
-contract DocumentRegistry is Ownable {
-    struct DocumentMetadata {
-        string originalHash;   // Stable ID — never changes
-        string name;
-        address owner;
-        uint256 timestamp;     // Last-updated timestamp
-        uint256 currentVersion;
-    }
-
-    // Stable ID => metadata
-    mapping(string => DocumentMetadata) private documents;
-    // Stable ID => exists?
-    mapping(string => bool) private docExists;
-    // Stable ID => ordered list of version CIDs (index 0 = v1)
-    mapping(string => string[]) private versionHistory;
-    // Stable ID => user address => has access?
-    mapping(string => mapping(address => bool)) private accessList;
-
-    // Events
-    event DocumentRegistered(string indexed docId, address indexed owner, string name);
-    event DocumentUpdated(string indexed docId, address indexed owner, uint256 version, string newHash);
-    event AccessGranted(string indexed docId, address indexed owner, address indexed user);
-    event AccessRevoked(string indexed docId, address indexed owner, address indexed user);
-
-    constructor() Ownable(msg.sender) {}
+contract DocumentRegistry {
 
     // -------------------------------------------------------------------------
-    // Core CRUD
+    // Structs
+    // -------------------------------------------------------------------------
+
+    struct DocumentMetadata {
+        address owner;          // Wallet that registered the document
+        string  cid;            // Latest IPFS CID
+        uint256 createdAt;      // Block timestamp of first registration
+        uint256 updatedAt;      // Block timestamp of latest update
+        uint256 versionCount;   // Number of versions (starts at 1)
+        bool    exists;
+    }
+
+    // -------------------------------------------------------------------------
+    // State
+    // -------------------------------------------------------------------------
+
+    /// documentHash => metadata
+    mapping(bytes32 => DocumentMetadata) private _docs;
+
+    /// documentHash => ordered CID history (index 0 = v1)
+    mapping(bytes32 => string[]) private _versions;
+
+    /// documentHash => user address => granted?
+    mapping(bytes32 => mapping(address => bool)) private _access;
+
+    // -------------------------------------------------------------------------
+    // Events
+    // -------------------------------------------------------------------------
+
+    event DocumentRegistered(
+        bytes32 indexed documentHash,
+        address indexed owner,
+        string  cid
+    );
+
+    event DocumentUpdated(
+        bytes32 indexed documentHash,
+        address indexed owner,
+        uint256         version,
+        string          newCid
+    );
+
+    event AccessGranted(
+        bytes32 indexed documentHash,
+        address indexed owner,
+        address indexed user
+    );
+
+    event AccessRevoked(
+        bytes32 indexed documentHash,
+        address indexed owner,
+        address indexed user
+    );
+
+    // -------------------------------------------------------------------------
+    // Modifiers
+    // -------------------------------------------------------------------------
+
+    modifier onlyOwner(bytes32 documentHash) {
+        require(_docs[documentHash].exists, "Document not found");
+        require(_docs[documentHash].owner == msg.sender, "Not the document owner");
+        _;
+    }
+
+    // -------------------------------------------------------------------------
+    // Core: Register & Update
     // -------------------------------------------------------------------------
 
     /**
-     * @dev Registers a new document. The IPFS hash provided becomes the
-     *      stable document ID as well as the first version entry.
+     * @notice Register a new document on-chain.
+     * @param  documentHash  keccak256(owner, cid, name, mimeType, timestamp)
+     *                       computed off-chain by the server before returning
+     *                       to the client.
+     * @param  cid           IPFS Content Identifier of the file.
      */
-    function registerDocument(string memory _ipfsHash, string memory _name) public {
-        require(bytes(_ipfsHash).length > 0, "IPFS hash required");
-        require(!docExists[_ipfsHash], "Document already registered");
+    function registerDocument(bytes32 documentHash, string calldata cid) external {
+        require(documentHash != bytes32(0),     "documentHash required");
+        require(bytes(cid).length > 0,          "CID required");
+        require(!_docs[documentHash].exists,    "Document already registered");
 
-        documents[_ipfsHash] = DocumentMetadata({
-            originalHash: _ipfsHash,
-            name: _name,
-            owner: msg.sender,
-            timestamp: block.timestamp,
-            currentVersion: 1
+        _docs[documentHash] = DocumentMetadata({
+            owner:        msg.sender,
+            cid:          cid,
+            createdAt:    block.timestamp,
+            updatedAt:    block.timestamp,
+            versionCount: 1,
+            exists:       true
         });
 
-        docExists[_ipfsHash] = true;
-        versionHistory[_ipfsHash].push(_ipfsHash);
+        _versions[documentHash].push(cid);
 
-        emit DocumentRegistered(_ipfsHash, msg.sender, _name);
+        emit DocumentRegistered(documentHash, msg.sender, cid);
     }
 
     /**
-     * @dev Uploads a new version of an existing document.
-     * @param _docId    The stable ID (original IPFS hash) of the document.
-     * @param _newHash  The IPFS hash of the new file content.
+     * @notice Push a new version CID under an existing document.
+     * @param  documentHash  Stable identifier (same bytes32 as registration).
+     * @param  newCid        IPFS CID of the updated file content.
      */
-    function updateDocument(string memory _docId, string memory _newHash) public {
-        require(docExists[_docId], "Document not found");
-        require(documents[_docId].owner == msg.sender, "Not the document owner");
-        require(bytes(_newHash).length > 0, "New hash required");
+    function updateDocument(bytes32 documentHash, string calldata newCid)
+        external
+        onlyOwner(documentHash)
+    {
+        require(bytes(newCid).length > 0, "New CID required");
 
-        documents[_docId].currentVersion += 1;
-        documents[_docId].timestamp = block.timestamp;
-        versionHistory[_docId].push(_newHash);
+        _docs[documentHash].cid          = newCid;
+        _docs[documentHash].updatedAt    = block.timestamp;
+        _docs[documentHash].versionCount += 1;
 
-        emit DocumentUpdated(_docId, msg.sender, documents[_docId].currentVersion, _newHash);
+        _versions[documentHash].push(newCid);
+
+        emit DocumentUpdated(
+            documentHash,
+            msg.sender,
+            _docs[documentHash].versionCount,
+            newCid
+        );
     }
 
     // -------------------------------------------------------------------------
     // Access Control
     // -------------------------------------------------------------------------
 
-    function grantAccess(string memory _docId, address _user) public {
-        require(docExists[_docId], "Document not found");
-        require(documents[_docId].owner == msg.sender, "Not the document owner");
-        require(_user != address(0), "Invalid address");
-
-        accessList[_docId][_user] = true;
-        emit AccessGranted(_docId, msg.sender, _user);
+    function grantAccess(bytes32 documentHash, address user)
+        external
+        onlyOwner(documentHash)
+    {
+        require(user != address(0), "Invalid address");
+        _access[documentHash][user] = true;
+        emit AccessGranted(documentHash, msg.sender, user);
     }
 
-    function revokeAccess(string memory _docId, address _user) public {
-        require(docExists[_docId], "Document not found");
-        require(documents[_docId].owner == msg.sender, "Not the document owner");
-
-        accessList[_docId][_user] = false;
-        emit AccessRevoked(_docId, msg.sender, _user);
+    function revokeAccess(bytes32 documentHash, address user)
+        external
+        onlyOwner(documentHash)
+    {
+        _access[documentHash][user] = false;
+        emit AccessRevoked(documentHash, msg.sender, user);
     }
 
-    function hasAccess(string memory _docId, address _user) public view returns (bool) {
-        if (!docExists[_docId]) return false;
-        if (documents[_docId].owner == _user) return true;
-        return accessList[_docId][_user];
+    /**
+     * @notice Returns true if `user` is the owner OR has been granted access.
+     */
+    function hasAccess(bytes32 documentHash, address user)
+        external
+        view
+        returns (bool)
+    {
+        if (!_docs[documentHash].exists) return false;
+        if (_docs[documentHash].owner == user) return true;
+        return _access[documentHash][user];
     }
 
     // -------------------------------------------------------------------------
     // Getters
     // -------------------------------------------------------------------------
 
-    function getDocument(string memory _docId) public view returns (
-        string memory originalHash,
-        string memory name,
-        address owner,
-        uint256 timestamp,
-        uint256 currentVersion,
-        string memory latestHash
-    ) {
-        require(docExists[_docId], "Document not found");
-        DocumentMetadata memory doc = documents[_docId];
-        string[] memory history = versionHistory[_docId];
-        return (
-            doc.originalHash,
-            doc.name,
-            doc.owner,
-            doc.timestamp,
-            doc.currentVersion,
-            history[history.length - 1]
-        );
+    function getDocument(bytes32 documentHash)
+        external
+        view
+        returns (
+            address owner,
+            string memory cid,
+            uint256 createdAt,
+            uint256 updatedAt,
+            uint256 versionCount
+        )
+    {
+        require(_docs[documentHash].exists, "Document not found");
+        DocumentMetadata storage d = _docs[documentHash];
+        return (d.owner, d.cid, d.createdAt, d.updatedAt, d.versionCount);
     }
 
-    function getVersionCount(string memory _docId) public view returns (uint256) {
-        require(docExists[_docId], "Document not found");
-        return versionHistory[_docId].length;
+    function getVersionCount(bytes32 documentHash)
+        external
+        view
+        returns (uint256)
+    {
+        require(_docs[documentHash].exists, "Document not found");
+        return _versions[documentHash].length;
     }
 
-    function getVersionAtIndex(string memory _docId, uint256 _index) public view returns (string memory) {
-        require(docExists[_docId], "Document not found");
-        require(_index < versionHistory[_docId].length, "Index out of bounds");
-        return versionHistory[_docId][_index];
+    function getVersionAtIndex(bytes32 documentHash, uint256 index)
+        external
+        view
+        returns (string memory)
+    {
+        require(_docs[documentHash].exists, "Document not found");
+        require(index < _versions[documentHash].length, "Index out of bounds");
+        return _versions[documentHash][index];
     }
 }

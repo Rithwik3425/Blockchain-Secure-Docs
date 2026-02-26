@@ -25,10 +25,7 @@ export const App = () => {
   const isConnected = status === "connected";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-slate-950 to-black text-slate-100">
-      {/* Background glow */}
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_60%)]" />
-
+    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-primary-500/30">
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-4 pb-16 pt-6 sm:px-6 lg:px-8">
         {/* ---------------------------------------------------------------- */}
         {/* Header                                                           */}
@@ -49,15 +46,8 @@ export const App = () => {
             </div>
           </div>
 
-          {/* Right side — phase indicator + wallet */}
+          {/* Right side — wallet */}
           <div className="flex items-center gap-4 text-[0.7rem] text-slate-400">
-            {/* Phase progress indicator */}
-            <div className="hidden items-center gap-3 sm:flex">
-                <span className="text-slate-400">Phase 7 · Storage & Dashboard</span>
-                <span className="h-1 w-16 rounded-full bg-slate-800">
-                    <span className="block h-1 w-14 rounded-full bg-primary-400" />
-                </span>
-            </div>
 
             {/* Wallet control — badge when connected, button otherwise */}
             {isConnected ? (
@@ -101,10 +91,9 @@ export const App = () => {
                   Wallet identity · IPFS storage · On-chain access
                 </div>
 
-                {/* Title */}
                 <h1 className="mb-6 animate-slide-up text-5xl font-extrabold tracking-tight text-slate-100 md:text-7xl">
                   Secure documents <br />
-                  <span className="bg-gradient-to-r from-primary-400 via-primary-500 to-primary-300 bg-clip-text text-transparent opacity-60">
+                  <span className="text-primary-400">
                     without trusting a server.
                   </span>
                 </h1>

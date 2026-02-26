@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { ethers } from "ethers";
-import { REGISTRY_CONFIG } from "../blockchain/config";
+import { REGISTRY_ADDRESS, REGISTRY_ABI } from "../blockchain/config";
 
 /**
  * ShareModal.jsx
  * 
- * Phase 9 — Shared Document Access
+ * Phase 8 — Access Control UI
  * 
- * Bridges the UI to the DocumentRegistry smart contract for granting access.
+ * Bridges the UI to the DocumentRegistry smart contract for granting and revoking access.
  */
 const ShareModal = ({ isOpen, onClose, document, onShared }) => {
+  const [activeTab, setActiveTab] = useState("grant"); // "grant" | "revoke"
   const [recipient, setRecipient] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState(null); // { type: 'success'|'error', msg: string }
+  const [status, setStatus] = useState(null); // { type: 'success'|'error'|'info', msg: string }
 
-  const handleShare = async (e) => {
+  const handleAction = async (e) => {
     e.preventDefault();
     if (!recipient || !document) return;
 
@@ -27,31 +28,51 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(
-        REGISTRY_CONFIG.address, 
-        REGISTRY_CONFIG.abi, 
+        REGISTRY_ADDRESS, 
+        REGISTRY_ABI, 
         signer
       );
 
       setStatus({ type: "info", msg: "Transacting on-chain..." });
 
-      // Phase 10: use originalHash as the stable docId; fall back to ipfsHash for old docs
-      const docId = document.originalHash || document.ipfsHash;
-      const tx = await contract.grantAccess(docId, recipient);
+      // Phase 8: Use documentHash as the stable on-chain ID
+      const docId = document.documentHash;
+      if (!docId) throw new Error("Document is missing on-chain fingerprint");
+
+      let tx;
+      if (activeTab === "grant") {
+        tx = await contract.grantAccess(docId, recipient);
+      } else {
+        tx = await contract.revokeAccess(docId, recipient);
+      }
+      
       setStatus({ type: "info", msg: "Waiting for confirmation..." });
       
       await tx.wait();
 
-      setStatus({ type: "success", msg: "Access granted successfully!" });
+      setStatus({ 
+        type: "success", 
+        msg: activeTab === "grant" ? "Access granted successfully!" : "Access revoked successfully!" 
+      });
       onShared && onShared(recipient);
       
       // Close after delay
-      setTimeout(onClose, 2000);
+      setTimeout(() => {
+        setStatus(null);
+        setRecipient("");
+        onClose();
+      }, 2000);
     } catch (err) {
       console.error("[share-modal] error:", err);
-      setStatus({ 
-        type: "error", 
-        msg: err.reason || err.message || "Transaction failed" 
-      });
+      // Catch metamask rejection
+      if (err.code === "ACTION_REJECTED" || err.code === 4001) {
+        setStatus({ type: "error", msg: "Transaction rejected in MetaMask" });
+      } else {
+        setStatus({ 
+          type: "error", 
+          msg: err.reason || err.message || "Transaction failed" 
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -64,7 +85,7 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
       <div className="w-full max-w-md overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl">
         <div className="p-6">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-slate-100">Share Document</h3>
+            <h3 className="text-xl font-bold text-slate-100">Manage Access</h3>
             <button onClick={onClose} className="rounded-full p-2 text-slate-500 hover:bg-slate-800 hover:text-slate-300">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -77,10 +98,27 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
             <p className="text-sm text-slate-300 truncate mt-1">{document?.name}</p>
           </div>
 
-          <form onSubmit={handleShare} className="space-y-4">
+          <div className="flex bg-slate-800 p-1 rounded-xl items-center mb-6">
+            <button
+              type="button"
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'grant' ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => { setActiveTab('grant'); setStatus(null); }}
+            >
+              Grant Access
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${activeTab === 'revoke' ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-300'}`}
+              onClick={() => { setActiveTab('revoke'); setStatus(null); }}
+            >
+              Revoke Access
+            </button>
+          </div>
+
+          <form onSubmit={handleAction} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-400 mb-2">
-                Recipient Wallet Address
+                User Wallet Address
               </label>
               <input
                 type="text"
@@ -105,16 +143,18 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
             <button
               type="submit"
               disabled={isProcessing || !recipient}
-              className="w-full rounded-xl bg-primary-600 py-3 text-sm font-bold text-white transition-all hover:bg-primary-500 active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg shadow-primary-900/20"
+              className={`w-full rounded-xl py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100 shadow-lg ${
+                activeTab === "grant" ? "bg-primary-600 hover:bg-primary-500 shadow-primary-900/20" : "bg-red-600 hover:bg-red-500 shadow-red-900/20"
+              }`}
             >
-              {isProcessing ? "Processing..." : "Grant On-Chain Access"}
+              {isProcessing ? "Processing..." : activeTab === "grant" ? "Grant On-Chain Access" : "Revoke On-Chain Access"}
             </button>
           </form>
         </div>
         
         <div className="bg-slate-950/40 p-4 border-t border-slate-800">
           <p className="text-[10px] text-center text-slate-600 leading-relaxed">
-            Sharing triggers an ETH transaction that anchors the recipient's permission to the blockchain.
+            Changing permissions triggers an ETH transaction that anchors the recipient's access list update to the blockchain.
           </p>
         </div>
       </div>

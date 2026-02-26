@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import { useWallet } from "../wallet";
+import { REGISTRY_ADDRESS, REGISTRY_ABI } from "../blockchain/config";
 
 /**
  * AuditTrail.jsx
  * 
- * Phase 8 — Audit Trails
+ * Phase 8/13 — Audit Trails (Event-Sourced)
  * 
- * Fetches and displays the activity log for the current user.
+ * Fetches and merges:
+ *  1. Backend logs (for off-chain actions like FILE_VIEW)
+ *  2. Smart Contract Events (for on-chain actions: Register, Update, Grant, Revoke)
+ * 
+ * Displays Block Number, Tx Hash, and IPFS CIDs where applicable.
  */
 const AuditTrail = () => {
   const { address, signature } = useWallet();
@@ -23,6 +29,7 @@ const AuditTrail = () => {
     setError(null);
 
     try {
+      // 1. Fetch Backend Logs (FILE_VIEW, etc)
       const response = await fetch(`${API_BASE}/api/audits/my`, {
         headers: {
           "x-wallet-address": address,
@@ -31,9 +38,74 @@ const AuditTrail = () => {
       });
 
       const data = await response.json();
-      if (!data.success) throw new Error(data.error ?? "Failed to fetch logs");
+      if (!data.success) throw new Error(data.error ?? "Failed to fetch backend logs");
       
-      setLogs(data.audits);
+      let allLogs = data.audits.map(log => ({
+        id: log._id,
+        action: log.action,
+        timestamp: new Date(log.createdAt).getTime(),
+        documentName: log.documentId?.name || log.metadata?.name || "System event",
+        metadata: log.metadata || {},
+        source: "backend"
+      }));
+
+      // 2. Fetch Blockchain Events
+      try {
+        if (window.ethereum) {
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const contract = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, provider);
+
+          // Get events where owner == address
+          const registeredFilter = contract.filters.DocumentRegistered(null, address);
+          const updatedFilter    = contract.filters.DocumentUpdated(null, address);
+          const grantedFilter    = contract.filters.AccessGranted(null, address);
+          const revokedFilter    = contract.filters.AccessRevoked(null, address);
+
+          const [regEvents, updEvents, graEvents, revEvents] = await Promise.all([
+            contract.queryFilter(registeredFilter, -50000),
+            contract.queryFilter(updatedFilter, -50000),
+            contract.queryFilter(grantedFilter, -50000),
+            contract.queryFilter(revokedFilter, -50000),
+          ]);
+
+          const processEvent = async (e, actionType) => {
+            const block = await e.getBlock();
+            return {
+              id: `${e.transactionHash}-${e.logIndex}`,
+              action: actionType,
+              timestamp: block.timestamp * 1000,
+              documentName: `Doc: ${e.args.documentHash.slice(0, 10)}...`, // We don't have the string name off-chain easily, fallback string
+              metadata: {
+                documentHash: e.args.documentHash,
+                txHash: e.transactionHash,
+                blockNumber: e.blockNumber,
+                cid: e.args.cid || e.args.newCid, // from registered/updated
+                version: e.args.version ? Number(e.args.version) : undefined,
+                recipient: e.args.user, // from granted/revoked
+              },
+              source: "blockchain"
+            };
+          };
+
+          const eventPromises = [
+            ...regEvents.map(e => processEvent(e, "ONCHAIN_REGISTER")),
+            ...updEvents.map(e => processEvent(e, "ONCHAIN_UPDATE")),
+            ...graEvents.map(e => processEvent(e, "ONCHAIN_GRANT")),
+            ...revEvents.map(e => processEvent(e, "ONCHAIN_REVOKE")),
+          ];
+
+          const chainLogs = await Promise.all(eventPromises);
+          allLogs = [...allLogs, ...chainLogs];
+        }
+      } catch (chainErr) {
+        console.warn("Could not fetch blockchain events:", chainErr);
+        // We will still show backend logs
+      }
+
+      // Sort descending by timestamp
+      allLogs.sort((a, b) => b.timestamp - a.timestamp);
+      
+      setLogs(allLogs);
     } catch (err) {
       console.error("[audit-trail] fetch error:", err);
       setError(err.message);
@@ -51,6 +123,7 @@ const AuditTrail = () => {
     switch (action) {
       case "FILE_UPLOAD":
       case "UPLOAD": // legacy
+      case "ONCHAIN_REGISTER":
         return (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -59,6 +132,7 @@ const AuditTrail = () => {
           </div>
         );
       case "VERSION_UPDATE":
+      case "ONCHAIN_UPDATE":
         return (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,6 +150,7 @@ const AuditTrail = () => {
           </div>
         );
       case "ACCESS_GRANT":
+      case "ONCHAIN_GRANT":
         return (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10 text-purple-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,6 +159,7 @@ const AuditTrail = () => {
           </div>
         );
       case "ACCESS_REVOKE":
+      case "ONCHAIN_REVOKE":
         return (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 text-red-400">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -104,12 +180,16 @@ const AuditTrail = () => {
 
   const getActionLabel = (action) => {
     const labels = {
-      FILE_UPLOAD: "File Upload",
-      UPLOAD: "File Upload",
-      VERSION_UPDATE: "Version Update",
+      FILE_UPLOAD: "Upload Prepared (Off-chain)",
+      UPLOAD: "Upload Prepared (Off-chain)",
+      VERSION_UPDATE: "Update Prepared (Off-chain)",
       FILE_VIEW: "File Viewed",
       ACCESS_GRANT: "Access Granted",
       ACCESS_REVOKE: "Access Revoked",
+      ONCHAIN_REGISTER: "Registered On-Chain",
+      ONCHAIN_UPDATE: "Updated On-Chain",
+      ONCHAIN_GRANT: "Access Granted On-Chain",
+      ONCHAIN_REVOKE: "Access Revoked On-Chain",
     };
     return labels[action] ?? action.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
   };
@@ -144,36 +224,95 @@ const AuditTrail = () => {
 
       <div className="relative space-y-8 before:absolute before:left-4 before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-slate-800">
         {logs.map((log) => (
-          <div key={log._id} className="relative pl-12">
+          <div key={log.id} className="relative pl-12 group">
             <div className="absolute left-0 mt-0.5">
               {getActionIcon(log.action)}
             </div>
             
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-200 capitalize">
-                  {getActionLabel(log.action)}
-                </span>
-                <span className="text-[10px] text-slate-500">
-                  {new Date(log.createdAt).toLocaleString()}
+            <div className="space-y-2 rounded-xl border border-slate-800/50 bg-slate-900/20 p-4 transition-colors hover:border-slate-700/80 hover:bg-slate-900/40">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-200">
+                    {getActionLabel(log.action)}
+                  </span>
+                  {log.source === "blockchain" && (
+                    <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
+                      On-Chain Event
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  {new Date(log.timestamp).toLocaleString()}
                 </span>
               </div>
               
               <div className="text-xs text-slate-400">
-                {log.documentId ? (
-                  <>
-                    Target document: <span className="text-primary-400/80">{log.documentId.name}</span>
-                  </>
-                ) : (
-                  log.metadata.fileName || "System event"
-                )}
+                {log.documentName}
               </div>
               
-              {log.metadata.recipient && (
-                <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-500">
-                  <span className="rounded bg-slate-800 px-1 py-0.5">To: {log.metadata.recipient.slice(0, 6)}...{log.metadata.recipient.slice(-4)}</span>
-                </div>
-              )}
+              {/* Detailed Metadata Grid */}
+              <div className="mt-3 grid gap-1.5 text-[10px]">
+                
+                {log.metadata.recipient && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">Recipient:</span>
+                    <span className="font-mono text-slate-300 break-all">{log.metadata.recipient}</span>
+                  </div>
+                )}
+                
+                {log.metadata.version && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">Version:</span>
+                    <span className="font-bold text-emerald-400">v{log.metadata.version}</span>
+                  </div>
+                )}
+                
+                {log.metadata.documentHash && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">Doc Hash:</span>
+                    <span className="font-mono text-slate-300 truncate" title={log.metadata.documentHash}>
+                      {log.metadata.documentHash}
+                    </span>
+                  </div>
+                )}
+
+                {log.metadata.cid && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">IPFS CID:</span>
+                    <a
+                      href={`https://ipfs.io/ipfs/${log.metadata.cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-primary-400/80 hover:text-primary-300 hover:underline truncate"
+                      title={log.metadata.cid}
+                    >
+                      {log.metadata.cid}
+                    </a>
+                  </div>
+                )}
+                
+                {log.source === "blockchain" && log.metadata.blockNumber && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">Block:</span>
+                    <span className="font-mono text-slate-300">#{log.metadata.blockNumber}</span>
+                  </div>
+                )}
+
+                {log.source === "blockchain" && log.metadata.txHash && (
+                  <div className="flex items-start gap-2">
+                    <span className="w-20 font-semibold text-slate-500">Tx Hash:</span>
+                    <a
+                      href={`https://amoy.polygonscan.com/tx/${log.metadata.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-slate-400 hover:text-primary-400 hover:underline truncate"
+                      title={log.metadata.txHash}
+                    >
+                      {log.metadata.txHash}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         ))}

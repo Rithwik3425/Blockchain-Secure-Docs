@@ -1,10 +1,12 @@
 /**
  * services/blockchainService.js
  *
- * Phase 9–10  —  Shared Document Access + Versioning
+ * Canonical lifecycle — read-only backend interface to DocumentRegistry.
  *
- * Backend interface to the DocumentRegistry smart contract.
- * Updated for Phase 10 ABI: hasAccess(docId, user), getDocument updated.
+ * The server NEVER writes to the chain. Only the client wallet does.
+ * This service is used solely to verify on-chain access for document reads.
+ *
+ * documentHash is bytes32 — passed as 0x-prefixed hex string from the DB.
  */
 
 "use strict";
@@ -12,66 +14,43 @@
 const { ethers } = require("ethers");
 
 const BLOCKCHAIN_RPC_URL =
-  process.env.BLOCKCHAIN_RPC_URL || "http://127.0.0.1:8545";
+  process.env.BLOCKCHAIN_RPC_URL || "https://rpc-amoy.polygon.technology";
 const CONTRACT_ADDRESS =
-  process.env.REGISTRY_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  process.env.REGISTRY_CONTRACT_ADDRESS;
 
-// Minimal ABI for what the backend needs
+// Minimal read-only ABI — only what the backend needs
 const REGISTRY_ABI = [
-  "function hasAccess(string memory _docId, address _user) public view returns (bool)",
-  "function getDocument(string memory _docId) public view returns (string originalHash, string name, address owner, uint256 timestamp, uint256 currentVersion, string latestHash)",
-  "function getVersionCount(string memory _docId) public view returns (uint256)",
+  "function hasAccess(bytes32 documentHash, address user) external view returns (bool)",
+  "function getDocument(bytes32 documentHash) external view returns (address owner, string memory cid, uint256 createdAt, uint256 updatedAt, uint256 versionCount)",
 ];
 
-let provider;
-let contract;
+let _provider = null;
+let _contract = null;
 
 function getContract() {
-  if (!contract) {
-    provider = new ethers.JsonRpcProvider(BLOCKCHAIN_RPC_URL);
-    contract = new ethers.Contract(CONTRACT_ADDRESS, REGISTRY_ABI, provider);
+  if (!_contract) {
+    _provider = new ethers.JsonRpcProvider(BLOCKCHAIN_RPC_URL);
+    _contract = new ethers.Contract(CONTRACT_ADDRESS, REGISTRY_ABI, _provider);
   }
-  return contract;
+  return _contract;
 }
 
 /**
  * hasAccess
  *
- * Checks if a given wallet has on-chain permission to a document.
- * Owners always return true from the contract; no special handling needed.
+ * Returns true if `walletAddress` is the owner or has been granted access
+ * to the document identified by `documentHash` (bytes32 hex string).
  *
- * @param {string} walletAddress  - Ethereum address of the viewer.
- * @param {string} docId          - Stable document ID (original IPFS hash).
- * @returns {Promise<boolean>}
+ * Fails closed (returns false) on any RPC error.
  */
-async function hasAccess(walletAddress, docId) {
+async function hasAccess(walletAddress, documentHash) {
   try {
-    const c = getContract();
-    return await c.hasAccess(docId, walletAddress);
+    const contract = getContract();
+    return await contract.hasAccess(documentHash, walletAddress);
   } catch (err) {
     console.error(`[blockchain-service] hasAccess error: ${err.message}`);
     return false; // Fail closed
   }
 }
 
-/**
- * getVersionCount
- *
- * Returns the number of versions for a document.
- * Used for informational display; not access-critical.
- *
- * @param {string} docId - Stable document ID.
- * @returns {Promise<number>}
- */
-async function getVersionCount(docId) {
-  try {
-    const c = getContract();
-    const count = await c.getVersionCount(docId);
-    return Number(count);
-  } catch (err) {
-    console.error(`[blockchain-service] getVersionCount error: ${err.message}`);
-    return 0;
-  }
-}
-
-module.exports = { hasAccess, getVersionCount };
+module.exports = { hasAccess };

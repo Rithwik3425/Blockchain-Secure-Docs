@@ -27,19 +27,21 @@ const mongoose = require("mongoose");
 const documentSchema = new mongoose.Schema(
   {
     /**
-     * IPFS Content Identifier — always points to the LATEST version.
+     * bytes32 documentHash = keccak256(owner, cid, name, mimeType, timestamp)
+     * This is the PRIMARY on-chain identifier — never changes after creation.
+     * Stored as 0x-prefixed 64-char hex string.
      */
-    ipfsHash: {
+    documentHash: {
       type: String,
       trim: true,
       default: null,
+      index: true,
     },
 
     /**
-     * The FIRST IPFS hash uploaded. Acts as the stable on-chain document ID.
-     * Never changes after initial upload.
+     * IPFS Content Identifier — always points to the LATEST version.
      */
-    originalHash: {
+    ipfsHash: {
       type: String,
       trim: true,
       default: null,
@@ -102,8 +104,23 @@ const documentSchema = new mongoose.Schema(
     /** File size in bytes. */
     size: {
       type: Number,
-      min: [0, "Size cannot be negative."],
+      min:  [0, "Size cannot be negative."],
       default: 0,
+    },
+
+    /**
+     * True once the client's wallet has confirmed the on-chain tx.
+     * Until then the document exists only as a pending index entry.
+     */
+    registeredOnChain: {
+      type: Boolean,
+      default: false,
+    },
+
+    /** The on-chain transaction hash from registerDocument(). */
+    txHash: {
+      type: String,
+      default: null,
     },
 
     /** Optional human-readable description. */
