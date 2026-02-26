@@ -38,8 +38,8 @@ const DocumentList = ({ refreshTrigger, searchQuery, sortBy = "date" }) => {
   // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading && documents.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent" />
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-inner backdrop-blur-md">
+        <div className="h-10 w-10 animate-[spin_1.5s_linear_infinite] rounded-full border-2 border-primary-500/80 border-t-transparent shadow-[0_0_15px_rgba(34,211,238,0.5)]" />
       </div>
     );
   }
@@ -59,14 +59,16 @@ const DocumentList = ({ refreshTrigger, searchQuery, sortBy = "date" }) => {
   // ── Empty ────────────────────────────────────────────────────────────────
   if (documents.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/10 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-4 h-10 w-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <p className="text-sm text-slate-400">
+      <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700/60 bg-slate-900/20 text-center shadow-inner backdrop-blur-sm">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-slate-400">
           {searchQuery ? `No documents matching "${searchQuery}"` : "No documents yet."}
         </p>
-        {!searchQuery && <p className="mt-1 text-xs text-slate-600">Upload a file to get started.</p>}
+        {!searchQuery && <p className="mt-1 text-xs text-slate-500">Upload a file to get started.</p>}
       </div>
     );
   }
@@ -92,14 +94,14 @@ const DocumentList = ({ refreshTrigger, searchQuery, sortBy = "date" }) => {
           return (
             <div
               key={doc._id ?? doc.documentHash}
-              className="group flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/30 p-4 transition-all hover:border-slate-700 hover:bg-slate-900/50"
+              className="group flex flex-col justify-between gap-4 rounded-xl border border-slate-700/60 bg-slate-900/40 p-5 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-500/40 hover:bg-slate-900/60 hover:shadow-[0_0_20px_rgba(34,211,238,0.1)] sm:flex-row sm:items-center sm:gap-2 sm:p-4"
             >
               {/* Left — icon + metadata */}
-              <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-xl group-hover:bg-primary-500/20">
+              <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-2xl shadow-[0_0_10px_rgba(34,211,238,0.1)] ring-1 ring-primary-500/20 transition-all duration-300 group-hover:bg-primary-500/20 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]">
                   {getFileIcon(doc.mimeType)}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate text-sm font-medium text-slate-200">{doc.name}</h3>
                     {/* On-chain status badge */}
@@ -149,7 +151,7 @@ const DocumentList = ({ refreshTrigger, searchQuery, sortBy = "date" }) => {
               </div>
 
               {/* Right — actions */}
-              <div className="ml-3 flex shrink-0 items-center gap-1.5">
+              <div className="flex shrink-0 items-center gap-2 border-t border-slate-800/60 pt-4 sm:ml-3 sm:border-0 sm:pt-0">
                 {/* View on IPFS */}
                 {isMockCid ? (
                   <span
@@ -197,7 +199,7 @@ const DocumentList = ({ refreshTrigger, searchQuery, sortBy = "date" }) => {
                   onClick={() => setShareDoc(doc)}
                   title="Share on-chain"
                   disabled={!isOnChain}
-                  className="rounded-lg bg-primary-500/10 px-2.5 py-1.5 text-xs font-medium text-primary-400 transition-colors hover:bg-primary-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-lg border border-primary-500/30 bg-primary-500/10 px-4 py-2 text-[0.7rem] font-bold tracking-wide text-primary-400 shadow-[0_0_10px_rgba(34,211,238,0.1)] backdrop-blur-sm transition-all duration-300 hover:border-primary-400/80 hover:bg-primary-500/20 hover:text-primary-300 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-primary-500/30 disabled:hover:bg-primary-500/10 disabled:hover:shadow-[0_0_10px_rgba(34,211,238,0.1)]"
                 >
                   Share
                 </button>

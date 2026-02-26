@@ -16,6 +16,24 @@ body {
     sans-serif;
   /* Prevent layout shifts while font loads */
   font-display: swap;
+  background-color: #020617; /* slate-950 */
+  color: #f1f5f9; /* slate-100 */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
 }
 
 /* Smooth scroll for any anchor navigation */

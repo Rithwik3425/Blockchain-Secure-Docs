@@ -162,13 +162,13 @@ const IdlePanel = ({ onConnect, isMetaMask }) => (
   <div className="flex flex-col items-center gap-6 text-center">
     <StepDots current={0} />
 
-    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-primary-500/30 bg-slate-900/80 shadow-lg shadow-black/40">
+    <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-primary-500/30 bg-slate-900/60 shadow-[0_0_20px_rgba(34,211,238,0.15)] backdrop-blur-sm">
       <MetaMaskIcon />
     </div>
 
     <div className="space-y-2">
-      <h2 className="text-lg font-semibold text-slate-100">Connect your wallet</h2>
-      <p className="max-w-xs text-[0.8rem] leading-relaxed text-slate-400">
+      <h2 className="text-xl font-bold tracking-tight text-slate-100">Connect your wallet</h2>
+      <p className="max-w-xs text-[0.85rem] leading-relaxed text-slate-400">
         Your wallet address is your identity — no passwords, no sign-up. You
         will be asked to sign a message to prove ownership.
       </p>
@@ -194,7 +194,7 @@ const IdlePanel = ({ onConnect, isMetaMask }) => (
       id="wallet-modal-connect-btn"
       onClick={onConnect}
       disabled={!isMetaMask}
-      className="w-full rounded-xl bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-100 shadow-md shadow-primary-900/50 transition-all duration-200 hover:bg-primary-400 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:translate-y-0"
+      className="w-full min-h-[48px] rounded-xl bg-primary-500 px-5 py-3 text-sm font-bold tracking-wide text-slate-100 shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all duration-300 hover:-translate-y-1 hover:bg-primary-400 hover:shadow-[0_0_30px_rgba(34,211,238,0.4)] disabled:cursor-not-allowed disabled:opacity-40 disabled:translate-y-0 disabled:shadow-none"
     >
       Connect with MetaMask
     </button>
@@ -404,20 +404,20 @@ const WalletModal = ({ isOpen, onClose }) => {
     >
       {/* Blurred dark overlay */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
         onClick={dismissible ? onClose : undefined}
         aria-hidden="true"
       />
 
       {/* Modal card */}
-      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-slate-800/90 bg-slate-950/95 p-7 shadow-2xl shadow-black/70 backdrop-blur">
+      <div className="relative z-10 w-full max-w-sm rounded-3xl border border-slate-700/60 bg-slate-900/70 p-8 shadow-[0_0_50px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fade-in">
         {/* Close button */}
         {dismissible && (
           <button
             type="button"
             id="wallet-modal-close-btn"
             onClick={onClose}
-            className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full border border-slate-800/80 bg-slate-900/80 text-slate-400 transition-colors hover:border-slate-700 hover:text-slate-100"
+            className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-slate-700/60 bg-slate-800/50 text-slate-400 transition-all duration-300 hover:rotate-90 hover:border-slate-500 hover:text-slate-100 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] focus:outline-none"
             aria-label="Close modal"
           >
             ✕

@@ -149,30 +149,33 @@ const Dashboard = () => {
       )}
 
       {/* Header */}
-      <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-100">Your Secure Vault</h1>
-          <p className="mt-2 text-slate-400">
+      <div className="mb-10 flex flex-col items-start gap-6 md:flex-row md:items-end justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 sm:text-4xl">Your Secure Vault</h1>
+          <p className="text-sm text-slate-400 sm:text-base">
             Documents pinned to IPFS and anchored on Polygon Amoy.
           </p>
         </div>
-        <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-2 text-sm text-slate-400">
-          <span className="mr-2 text-emerald-400">●</span>
-          Connected as{" "}
-          <span className="text-slate-200">{address?.slice(0, 6)}…{address?.slice(-4)}</span>
+        <div className="inline-flex items-center gap-2 rounded-xl border border-slate-800/80 bg-slate-900/40 px-4 py-2 text-sm text-slate-400 shadow-inner backdrop-blur-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+          </span>
+          <span>Connected:</span>
+          <span className="font-mono text-slate-200">{address?.slice(0, 6)}…{address?.slice(-4)}</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="mb-8 flex gap-8 border-b border-slate-800">
+      <div className="mb-8 flex gap-6 overflow-x-auto border-b border-slate-800/60 pb-1 scrollbar-hide">
         {["vault", "activity"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`pb-4 text-sm font-semibold capitalize transition-all ${
+            className={`whitespace-nowrap pb-3 text-sm font-semibold capitalize tracking-wide transition-all ${
               activeTab === tab
-                ? "border-b-2 border-primary-500 text-primary-400"
-                : "text-slate-500 hover:text-slate-300"
+                ? "border-b-2 border-primary-400 text-primary-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+                : "border-b-2 border-transparent text-slate-500 hover:text-slate-300"
             }`}
           >
             {tab === "vault" ? "My Vault" : "Activity Log"}
@@ -180,22 +183,22 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {activeTab === "vault" ? (
           <>
             {/* ── Upload Panel ──────────────────────────────────────────────── */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-8 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-sm">
-                <h2 className="mb-4 text-lg font-semibold text-slate-200">Upload Document</h2>
+            <div className="order-1 lg:col-span-1">
+              <div className="sticky top-8 rounded-2xl border border-slate-800/80 bg-slate-900/40 p-6 shadow-lg backdrop-blur-md">
+                <h2 className="mb-4 text-lg font-bold tracking-tight text-slate-200">Upload Document</h2>
 
                 {/* Drop Zone */}
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={onDrop}
-                  className={`group relative flex h-56 flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ${
+                  className={`group relative flex h-56 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-300 ${
                     isUploading
-                      ? "border-primary-500/50 bg-primary-500/5"
-                      : "border-slate-800 bg-slate-950/50 hover:border-primary-500/30 hover:bg-slate-900/50"
+                      ? "border-primary-500/50 bg-primary-500/10 shadow-[0_0_20px_rgba(34,211,238,0.15)]"
+                      : "border-slate-700/60 bg-slate-950/50 hover:border-primary-400/50 hover:bg-slate-900/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.05)]"
                   }`}
                 >
                   {isUploading ? (
@@ -226,16 +229,16 @@ const Dashboard = () => {
                         id="file-upload"
                         onChange={onFileSelect}
                         disabled={isWrongNetwork}
-                        className="absolute inset-0 z-10 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                        className="absolute inset-0 z-10 w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
                       />
-                      <div className="flex flex-col items-center text-center">
-                        <div className="mb-4 rounded-full bg-slate-800/50 p-4 text-slate-400 transition-colors group-hover:bg-primary-500/10 group-hover:text-primary-400">
+                      <div className="flex flex-col items-center text-center p-4">
+                        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-800/60 text-slate-400 shadow-inner transition-all duration-300 group-hover:scale-110 group-hover:bg-primary-500/10 group-hover:text-primary-400 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
                         </div>
-                        <p className="text-sm font-medium text-slate-300">Drag & drop or click to browse</p>
-                        <p className="mt-1 text-xs text-slate-500">Max 10 MB</p>
+                        <p className="text-sm font-semibold text-slate-300">Drag & drop or click</p>
+                        <p className="mt-1 text-xs text-slate-500">Max 10 MB limit</p>
                       </div>
                     </>
                   )}
@@ -267,11 +270,11 @@ const Dashboard = () => {
             </div>
 
             {/* ── Document List ──────────────────────────────────────────────── */}
-            <div className="lg:col-span-2">
+            <div className="order-2 lg:col-span-2">
               {/* Search & Sort */}
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <div className="relative flex-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -279,13 +282,13 @@ const Dashboard = () => {
                     placeholder="Search documents…"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900/50 py-2.5 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                    className="w-full rounded-xl border border-slate-700/60 bg-slate-900/50 py-3 pl-10 pr-4 text-sm text-slate-200 placeholder-slate-500 shadow-inner backdrop-blur-sm focus:border-primary-500/50 focus:bg-slate-900/80 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                   />
                 </div>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2.5 text-sm text-slate-300 focus:border-primary-500/50 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-700/60 bg-slate-900/50 px-4 py-3 text-sm font-medium text-slate-300 shadow-inner backdrop-blur-sm focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 sm:w-auto"
                 >
                   <option value="date">Newest First</option>
                   <option value="name">By Name</option>

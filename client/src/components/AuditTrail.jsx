@@ -204,49 +204,52 @@ const AuditTrail = () => {
 
   if (logs.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/10 p-12 text-center text-slate-500">
-        No activity recorded yet.
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700/60 bg-slate-900/20 p-12 text-center text-slate-500 shadow-inner backdrop-blur-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 h-10 w-10 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-sm tracking-wide">No activity recorded yet.</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-200">Activity Log</h2>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <h2 className="text-lg font-bold tracking-tight text-slate-200">Activity Log</h2>
         <button 
           onClick={fetchLogs}
-          className="text-xs text-primary-400 hover:text-primary-300"
+          className="rounded-full border border-slate-700/60 bg-slate-900/50 px-3 py-1.5 text-xs font-medium tracking-wide text-primary-400 shadow-inner backdrop-blur-sm transition-all duration-300 hover:border-primary-500/40 hover:bg-slate-800 hover:text-primary-300 hover:shadow-[0_0_10px_rgba(34,211,238,0.15)]"
         >
-          Refresh
+          Refresh Logs
         </button>
       </div>
 
-      <div className="relative space-y-8 before:absolute before:left-4 before:top-2 before:h-[calc(100%-16px)] before:w-px before:bg-slate-800">
+      <div className="relative space-y-8 before:absolute before:left-[19px] before:top-4 before:h-[calc(100%-32px)] before:w-px before:bg-linear-to-b before:from-slate-800 before:via-slate-700 before:to-transparent">
         {logs.map((log) => (
-          <div key={log.id} className="relative pl-12 group">
-            <div className="absolute left-0 mt-0.5">
+          <div key={log.id} className="group relative pl-12">
+            <div className="absolute left-0 top-1 shadow-[0_0_10px_rgba(0,0,0,0.5)] rounded-full z-10">
               {getActionIcon(log.action)}
             </div>
             
-            <div className="space-y-2 rounded-xl border border-slate-800/50 bg-slate-900/20 p-4 transition-colors hover:border-slate-700/80 hover:bg-slate-900/40">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+            <div className="space-y-3 rounded-xl border border-slate-800/80 bg-slate-900/40 p-5 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-700 hover:bg-slate-900/60 hover:shadow-[0_0_15px_rgba(255,255,255,0.03)]">
+              <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-bold text-slate-200">
                     {getActionLabel(log.action)}
                   </span>
                   {log.source === "blockchain" && (
-                    <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
+                    <span className="shrink-0 rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300 shadow-[0_0_8px_rgba(99,102,241,0.2)]">
                       On-Chain Event
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-500 font-medium">
+                <span className="text-[10px] font-medium tracking-wide text-slate-500 sm:text-right">
                   {new Date(log.timestamp).toLocaleString()}
                 </span>
               </div>
               
-              <div className="text-xs text-slate-400">
+              <div className="text-xs font-medium text-slate-400">
                 {log.documentName}
               </div>
               
@@ -254,9 +257,9 @@ const AuditTrail = () => {
               <div className="mt-3 grid gap-1.5 text-[10px]">
                 
                 {log.metadata.recipient && (
-                  <div className="flex items-start gap-2">
-                    <span className="w-20 font-semibold text-slate-500">Recipient:</span>
-                    <span className="font-mono text-slate-300 break-all">{log.metadata.recipient}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="w-20 shrink-0 font-semibold tracking-wide text-slate-500 uppercase">Recipient:</span>
+                    <span className="min-w-0 break-all font-mono text-slate-400">{log.metadata.recipient}</span>
                   </div>
                 )}
                 
@@ -268,22 +271,22 @@ const AuditTrail = () => {
                 )}
                 
                 {log.metadata.documentHash && (
-                  <div className="flex items-start gap-2">
-                    <span className="w-20 font-semibold text-slate-500">Doc Hash:</span>
-                    <span className="font-mono text-slate-300 truncate" title={log.metadata.documentHash}>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="w-20 shrink-0 font-semibold tracking-wide text-slate-500 uppercase">Doc Hash:</span>
+                    <span className="min-w-0 break-all font-mono text-slate-400" title={log.metadata.documentHash}>
                       {log.metadata.documentHash}
                     </span>
                   </div>
                 )}
 
                 {log.metadata.cid && (
-                  <div className="flex items-start gap-2">
-                    <span className="w-20 font-semibold text-slate-500">IPFS CID:</span>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="w-20 shrink-0 font-semibold tracking-wide text-slate-500 uppercase">IPFS CID:</span>
                     <a
                       href={`https://ipfs.io/ipfs/${log.metadata.cid}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-mono text-primary-400/80 hover:text-primary-300 hover:underline truncate"
+                      className="min-w-0 break-all font-mono text-primary-400/80 transition-colors hover:text-primary-300 hover:underline"
                       title={log.metadata.cid}
                     >
                       {log.metadata.cid}
@@ -299,13 +302,13 @@ const AuditTrail = () => {
                 )}
 
                 {log.source === "blockchain" && log.metadata.txHash && (
-                  <div className="flex items-start gap-2">
-                    <span className="w-20 font-semibold text-slate-500">Tx Hash:</span>
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
+                    <span className="w-20 shrink-0 font-semibold tracking-wide text-slate-500 uppercase">Tx Hash:</span>
                     <a
                       href={`https://amoy.polygonscan.com/tx/${log.metadata.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-mono text-slate-400 hover:text-primary-400 hover:underline truncate"
+                      className="min-w-0 break-all font-mono text-slate-400 transition-colors hover:text-primary-400 hover:underline"
                       title={log.metadata.txHash}
                     >
                       {log.metadata.txHash}

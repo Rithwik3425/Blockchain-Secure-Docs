@@ -150,7 +150,7 @@ const WalletBadge = () => {
         type="button"
         id="wallet-badge-btn"
         onClick={() => setOpen((o) => !o)}
-        className="group inline-flex items-center gap-2 rounded-full border border-primary-500/50 bg-slate-950/80 px-3 py-1.5 text-[0.7rem] font-medium text-primary-100 shadow-sm shadow-black/40 transition-all duration-200 hover:border-primary-500/80 hover:bg-primary-500/10"
+        className="group inline-flex min-h-[44px] items-center gap-2 rounded-full border border-primary-500/40 bg-slate-900/80 px-4 py-2 text-[0.75rem] font-semibold tracking-wide text-primary-100 shadow-[0_0_15px_rgba(34,211,238,0.1)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-400/80 hover:bg-primary-500/10 hover:shadow-[0_0_20px_rgba(34,211,238,0.25)]"
         aria-haspopup="true"
         aria-expanded={open}
       >
@@ -194,10 +194,10 @@ const WalletBadge = () => {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-40 mt-2 w-56 rounded-2xl border border-slate-800/90 bg-slate-950/95 py-2 shadow-2xl shadow-black/60 backdrop-blur"
+          className="absolute right-0 top-full z-40 mt-3 w-64 rounded-2xl border border-slate-700/60 bg-slate-900/90 py-2 shadow-[0_0_30px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fade-in"
         >
           {/* Address display */}
-          <div className="border-b border-slate-800/80 px-4 py-2.5">
+          <div className="border-b border-slate-700/50 px-5 py-3">
             <p className="text-[0.65rem] text-slate-500">Connected as</p>
             <p className="mt-0.5 break-all font-mono text-[0.7rem] text-slate-200">
               {address}
@@ -210,7 +210,7 @@ const WalletBadge = () => {
             role="menuitem"
             id="wallet-badge-copy-btn"
             onClick={handleCopy}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[0.75rem] text-slate-300 transition-colors hover:bg-slate-900/60 hover:text-slate-100"
+            className="flex w-full items-center gap-3 px-5 py-3 text-[0.8rem] font-medium text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-slate-100 focus:bg-slate-800/60"
           >
             {copied ? <SmallCheckIcon /> : <CopyIcon />}
             {copied ? "Address copied!" : "Copy address"}
@@ -222,7 +222,7 @@ const WalletBadge = () => {
             role="menuitem"
             id="wallet-badge-disconnect-btn"
             onClick={handleDisconnect}
-            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-[0.75rem] text-rose-400 transition-colors hover:bg-rose-500/5 hover:text-rose-300"
+            className="flex w-full items-center gap-3 px-5 py-3 text-[0.8rem] font-medium text-rose-400 transition-colors hover:bg-rose-500/10 hover:text-rose-300 focus:bg-rose-500/10"
           >
             <SignOutIcon />
             Disconnect
