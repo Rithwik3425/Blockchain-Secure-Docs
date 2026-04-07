@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from "../wallet";
+import { getViewerUrl } from "../utils/viewer";
 
 /**
  * VersionHistoryModal.jsx  —  Phase 10
@@ -96,7 +97,7 @@ const VersionHistoryModal = ({ isOpen, onClose, document }) => {
                         {v.version === Math.max(...versions.map(x => x.version)) ? "Latest" : `Version ${v.version}`}
                       </span>
                       <a
-                        href={`https://ipfs.io/ipfs/${v.ipfsHash}`}
+                        href={getViewerUrl(v.ipfsHash, document?.name)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-700 transition-colors"

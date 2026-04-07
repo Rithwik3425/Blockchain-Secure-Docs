@@ -77,7 +77,11 @@ const Dashboard = () => {
       const signer   = await provider.getSigner();
       const contract = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, signer);
 
-      const tx = await contract.registerDocument(documentHash, cid);
+      const tx = await contract.registerDocument(documentHash, cid, {
+        maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+        maxFeePerGas: ethers.parseUnits("60", "gwei"),
+        gasLimit: 500000,
+      });
       setUploadStep(3);
       const receipt = await tx.wait();
 
@@ -95,11 +99,16 @@ const Dashboard = () => {
       setRefreshTrigger((n) => n + 1);
     } catch (err) {
       console.error("[dashboard] upload error:", err);
+      console.error("[dashboard] error code:", err.code);
+      console.error("[dashboard] error reason:", err.reason);
+      console.error("[dashboard] error message:", err.message);
+      if (err.data) console.error("[dashboard] error data:", err.data);
+
       // User rejection from MetaMask is not an error we want to show as red
       if (err.code === 4001 || err.code === "ACTION_REJECTED") {
         setUploadError("Transaction cancelled. The file was pinned to IPFS but not registered on-chain.");
       } else {
-        setUploadError(err.message);
+        setUploadError(err.reason || err.message || "Upload failed");
       }
     } finally {
       setUploadStep(0);

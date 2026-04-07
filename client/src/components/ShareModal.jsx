@@ -41,9 +41,17 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
 
       let tx;
       if (activeTab === "grant") {
-        tx = await contract.grantAccess(docId, recipient);
+        tx = await contract.grantAccess(docId, recipient, {
+          maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+          maxFeePerGas: ethers.parseUnits("60", "gwei"),
+          gasLimit: 500000,
+        });
       } else {
-        tx = await contract.revokeAccess(docId, recipient);
+        tx = await contract.revokeAccess(docId, recipient, {
+          maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+          maxFeePerGas: ethers.parseUnits("60", "gwei"),
+          gasLimit: 500000,
+        });
       }
       
       setStatus({ type: "info", msg: "Waiting for confirmation..." });
@@ -64,6 +72,11 @@ const ShareModal = ({ isOpen, onClose, document, onShared }) => {
       }, 2000);
     } catch (err) {
       console.error("[share-modal] error:", err);
+      console.error("[share-modal] error code:", err.code);
+      console.error("[share-modal] error reason:", err.reason);
+      console.error("[share-modal] error message:", err.message);
+      if (err.data) console.error("[share-modal] error data:", err.data);
+
       // Catch metamask rejection
       if (err.code === "ACTION_REJECTED" || err.code === 4001) {
         setStatus({ type: "error", msg: "Transaction rejected in MetaMask" });

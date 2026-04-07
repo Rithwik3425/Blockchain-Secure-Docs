@@ -64,7 +64,11 @@ const UpdateVersionModal = ({ isOpen, onClose, document, onUpdated }) => {
       const signer   = await provider.getSigner();
       const contract = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, signer);
 
-      const tx = await contract.updateDocument(documentHash, newCid);
+      const tx = await contract.updateDocument(documentHash, newCid, {
+        maxPriorityFeePerGas: ethers.parseUnits("30", "gwei"),
+        maxFeePerGas: ethers.parseUnits("60", "gwei"),
+        gasLimit: 500000,
+      });
       
       setUploadStep(3);
       const receipt = await tx.wait();
@@ -96,6 +100,11 @@ const UpdateVersionModal = ({ isOpen, onClose, document, onUpdated }) => {
 
     } catch (err) {
       console.error("[update-modal] error:", err);
+      console.error("[update-modal] error code:", err.code);
+      console.error("[update-modal] error reason:", err.reason);
+      console.error("[update-modal] error message:", err.message);
+      if (err.data) console.error("[update-modal] error data:", err.data);
+
       if (err.code === 4001 || err.code === "ACTION_REJECTED") {
         setError("Transaction cancelled in MetaMask.");
       } else {

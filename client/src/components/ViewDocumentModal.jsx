@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "../blockchain/config";
+import { getViewerUrl } from "../utils/viewer";
 
 /**
  * ViewDocumentModal.jsx
@@ -44,7 +45,7 @@ const ViewDocumentModal = ({ isOpen, onClose, document, walletAddress }) => {
               const latestCid = document.versions?.length 
                 ? document.versions[document.versions.length - 1].ipfsHash 
                 : document.cid;
-              window.open(`https://ipfs.io/ipfs/${latestCid}`, '_blank');
+              window.open(getViewerUrl(latestCid, document.name), '_blank');
               onClose();
             }, 1000);
           }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useWallet } from "../wallet";
 import { REGISTRY_ADDRESS, REGISTRY_ABI } from "../blockchain/config";
+import { getViewerUrl } from "../utils/viewer";
 
 /**
  * AuditTrail.jsx
@@ -283,7 +284,7 @@ const AuditTrail = () => {
                   <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2">
                     <span className="w-20 shrink-0 font-semibold tracking-wide text-slate-500 uppercase">IPFS CID:</span>
                     <a
-                      href={`https://ipfs.io/ipfs/${log.metadata.cid}`}
+                      href={getViewerUrl(log.metadata.cid, log.documentName)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="min-w-0 break-all font-mono text-primary-400/80 transition-colors hover:text-primary-300 hover:underline"
