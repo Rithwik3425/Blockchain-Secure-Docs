@@ -31,12 +31,17 @@ err()     { echo -e "${RED}[error]${RESET} $*"; }
 # ── Stop mode ───────────────────────────────────────────────────────────────
 if [[ "${1:-}" == "stop" ]]; then
   echo -e "${BOLD}Stopping all services…${RESET}"
+
   for port in 5001 4000 5173; do
-    if fuser "$port/tcp" &>/dev/null 2>&1; then
-      fuser -k "$port/tcp" 2>/dev/null && echo "  killed :$port"
+    pid=$(lsof -ti :$port 2>/dev/null)
+    if [[ -n "$pid" ]]; then
+      kill -9 $pid 2>/dev/null && echo "  killed :$port (PID $pid)"
     fi
   done
+
   pkill -f "ipfs daemon" 2>/dev/null && echo "  killed ipfs daemon" || true
+  pkill -f "vite" 2>/dev/null && echo "  killed vite" || true
+
   echo -e "${GREEN}All services stopped.${RESET}"
   exit 0
 fi
